@@ -1,0 +1,4 @@
+homeworks/**/.vs/
+homeworks/**/x64/
+homeworks/**/*.json
+homeworks/**/*.user
