@@ -37,5 +37,26 @@
     <None Include="..\..\..\..\perfaware\part1\listing_0038_many_register_mov">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="..\..\..\..\perfaware\part1\listing_0037_single_register_mov">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\..\..\perfaware\part1\listing_0037_single_register_mov.asm">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\..\..\perfaware\part1\listing_0038_many_register_mov.asm">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\..\..\perfaware\part1\listing_0039_more_movs">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\..\..\perfaware\part1\listing_0039_more_movs.asm">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\..\..\perfaware\part1\listing_0040_challenge_movs">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\..\..\perfaware\part1\listing_0040_challenge_movs.asm">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
 </Project>
