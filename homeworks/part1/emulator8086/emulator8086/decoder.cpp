@@ -32,7 +32,7 @@ const char *reg_table[2][8] = {
 	{ "ax", "cx", "dx", "bx", "sp", "bp", "si", "di", },
 };
 
-const char *regmem_table[8] = {
+const char *eff_addr_table[8] = {
 	"bx + si",
 	"bx + di",
 	"bp + si",
@@ -46,6 +46,13 @@ const char *regmem_table[8] = {
 bool check_opcode(uint8_t instr, Instruction opcode) {
 	int offset = std::countl_zero(uint8_t(opcode));
 	return ((instr >> offset) & opcode) == opcode;
+}
+
+int16_t bitwise_abs(int16_t num) {
+	int16_t mask = num >> 15;
+	num = num ^ mask;
+
+	return num - mask;
 }
 
 void decode(const uint8_t *source, std::size_t source_size) {
@@ -91,30 +98,30 @@ void decode(const uint8_t *source, std::size_t source_size) {
 			} else {
 				const char *r = reg_table[wide][reg];
 				char eff_addr_calc[16] = { '\0' };
-				const char *eff_addr = regmem_table[regmem];
+				const char *eff_addr = eff_addr_table[regmem];
 
 				if (mode == MemoryMode::SHORT) {
-					uint8_t data = source[ptr++];
-					if (data) {
-						sprintf(eff_addr_calc, "%s + %d", eff_addr, data);
+					int8_t disp = source[ptr++];
+					if (disp) {
+						sprintf(eff_addr_calc, "%s %s %d", eff_addr, disp > 0 ? "+" : "-", bitwise_abs(disp));
 					} else {
 						sprintf(eff_addr_calc, "%s", eff_addr);
 					}
 				} else if (mode == MemoryMode::WIDE || regmem == 0x6) {
-					uint8_t low = source[ptr++];
-					uint8_t high = source[ptr++];
-					uint16_t data = low | (high << 8);
+					uint8_t disp_l = source[ptr++];
+					uint8_t disp_h = source[ptr++];
+					int16_t disp = disp_l | (int16_t(bool(disp_h)) * (disp_h << 8) + int16_t(!bool(disp_h)) * (disp_l & 0x8000));
 
 					if (mode == MemoryMode::WIDE) {
-						if (data) {
-							sprintf(eff_addr_calc, "%s + %d", eff_addr, data);
+						if (disp) {
+							sprintf(eff_addr_calc, "%s %s %d", eff_addr, disp > 0 ? "+" : "-", bitwise_abs(disp));
 						} else {
 							sprintf(eff_addr_calc, "%s", eff_addr);
 						}
 					} else {
-						sprintf(eff_addr_calc, "%d", data);
+						sprintf(eff_addr_calc, "%d", disp);
 					}
-				} else {
+				} else { // MemoryMode::NO_DISPLACEMENT
 					sprintf(eff_addr_calc, "%s", eff_addr);
 				}
 
@@ -129,16 +136,88 @@ void decode(const uint8_t *source, std::size_t source_size) {
 		}
 
 		if (check_opcode(instr, Instruction::IMM_TO_REGMEM)) {
+			uint8_t operands = source[ptr++];
+			
+			const bool wide = (instr & 0x1);
+			const uint8_t mode = (operands & DataMask::MOD) >> 6;
+			const uint8_t regmem = (operands & DataMask::REGMEM);
 
-			continue;
-		}
+			if (mode == MemoryMode::REGISTER) {
+				const char *r = reg_table[wide][regmem];
 
-		if (check_opcode(instr, Instruction::MEM_TO_ACC)) {
+				uint8_t data_l = source[ptr++];
+				uint8_t data_h = wide ? source[ptr++] : 0;
+				uint16_t data = data_l | (data_h << 8);
+
+				fprintf(stdout, "mov %s, %d\n", r, data);
+			} else if (mode == MemoryMode::SHORT) {
+				char eff_addr_calc[16] = { '\0' };
+				int8_t disp = source[ptr++];
+				
+				uint16_t data = source[ptr++];
+				data = wide ? (data | (source[ptr++] << 8)) : data;
+
+				if (disp) {
+					sprintf(eff_addr_calc, "%s %s %d", eff_addr_calc, disp > 0 ? "+" : "-", bitwise_abs(disp));
+				} else {
+					sprintf(eff_addr_calc, "%s", eff_addr_table[regmem]);
+				}
+
+				fprintf(stdout, "mov [%s], byte %d\n", eff_addr_calc, data);
+			} else if (mode == MemoryMode::WIDE) {
+				char eff_addr_calc[16] = { '\0' };
+				uint8_t disp_l = source[ptr++];
+				uint8_t disp_h = source[ptr++];
+				int16_t disp = disp_l | (int16_t(bool(disp_h)) * (disp_h << 8) + int16_t(!bool(disp_h)) * (disp_l & 0x8000));
+
+				uint16_t data = source[ptr++];
+				data = wide ? (data | (source[ptr++] << 8)) : data;
+
+				if (disp) {
+					sprintf(eff_addr_calc, "%s %s %d", eff_addr_table[regmem], disp > 0 ? "+" : "-", bitwise_abs(disp));
+				} else {
+					sprintf(eff_addr_calc, "%s", eff_addr_table[regmem]);
+				}
+
+				fprintf(stdout, "mov [%s], word %d\n", eff_addr_calc, data);
+			} else if (mode == MemoryMode::NO_DISPLACEMENT) {
+				char eff_addr_calc[16] = { '\0' };
+
+				if (regmem == 0x6) {
+					uint8_t disp_l = source[ptr++];
+					uint8_t disp_h = source[ptr++];
+					uint16_t disp = disp_l | disp_h;
+
+					sprintf(eff_addr_calc, "%d", disp);
+				} else {
+					sprintf(eff_addr_calc, "%s", eff_addr_table[regmem]);
+				}
+				
+				uint16_t data = source[ptr++];
+				data = wide ? (data | (source[ptr++] << 8)) : data;
+
+				fprintf(stdout, "mov [%s], %s %d\n", eff_addr_table[regmem], (wide ? "word" : "byte"), data);
+			}
 
 			continue;
 		}
 
 		if (check_opcode(instr, Instruction::ACC_TO_MEM)) {
+			const bool wide = (instr & 0x1);
+			uint16_t addr = source[ptr++];
+			addr = addr | (source[ptr++] << 8);
+
+			fprintf(stdout, "mov [%d], %s\n", addr, wide ? "ax" : "al");
+
+			continue;
+		}
+
+		if (check_opcode(instr, Instruction::MEM_TO_ACC)) {
+			const bool wide = (instr & 0x1);
+			uint16_t addr = source[ptr++];
+			addr = addr | (source[ptr++] << 8);
+
+			fprintf(stdout, "mov %s, [%d]\n", wide ? "ax" : "al", addr);
 
 			continue;
 		}
