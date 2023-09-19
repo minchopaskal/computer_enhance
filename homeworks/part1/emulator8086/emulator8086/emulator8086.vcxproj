@@ -137,6 +137,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="decoder.cpp" />
+    <ClCompile Include="instructions.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -148,6 +149,10 @@
     <None Include="..\..\..\..\perfaware\part1\listing_0039_more_movs.asm" />
     <None Include="..\..\..\..\perfaware\part1\listing_0040_challenge_movs" />
     <None Include="..\..\..\..\perfaware\part1\listing_0040_challenge_movs.asm" />
+    <None Include="..\..\..\..\perfaware\part1\listing_0041_add_sub_cmp_jnz" />
+    <None Include="..\..\..\..\perfaware\part1\listing_0041_add_sub_cmp_jnz.asm" />
+    <None Include="..\..\..\..\perfaware\part1\listing_0042_completionist_decode" />
+    <None Include="..\..\..\..\perfaware\part1\listing_0042_completionist_decode.asm" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

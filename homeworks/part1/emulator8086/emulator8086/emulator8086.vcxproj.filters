@@ -32,6 +32,9 @@
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="instructions.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\..\perfaware\part1\listing_0038_many_register_mov">
@@ -56,6 +59,18 @@
       <Filter>Resource Files</Filter>
     </None>
     <None Include="..\..\..\..\perfaware\part1\listing_0040_challenge_movs.asm">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\..\..\perfaware\part1\listing_0041_add_sub_cmp_jnz">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\..\..\perfaware\part1\listing_0041_add_sub_cmp_jnz.asm">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\..\..\perfaware\part1\listing_0042_completionist_decode">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\..\..\perfaware\part1\listing_0042_completionist_decode.asm">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>
