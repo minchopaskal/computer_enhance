@@ -4,13 +4,24 @@
 #include <bit>
 #include <cassert>
 #include <cstdio>
+#include <format>
+#include <optional>
+#include <string>
 #include <unordered_map>
 
 namespace emu8086 {
 
 // State
-const uint8_t* SOURCE = nullptr;
-std::unordered_map<int, std::string> labels;
+struct HumanAsm {
+	std::string instr;
+	std::optional<std::size_t> jmp_line;
+
+	HumanAsm(std::string &&str) : instr(str) {}
+	HumanAsm(std::string &&str, std::size_t jmp_line) : instr(str), jmp_line(jmp_line) {}
+};
+
+std::vector<HumanAsm> human_asm;
+std::unordered_map<std::size_t, int> labels;
 
 enum MemoryMode {
 	NO_DISPLACEMENT,
@@ -62,7 +73,7 @@ void handle_regmem_reg(std::string_view name, const uint8_t *&source, uint8_t op
 	
 		const char *fst = reg_table[wide][dst];
 		const char *snd = reg_table[wide][src];
-		fprintf(stdout, "%s %s, %s\n", name.data(), fst, snd);
+		human_asm.push_back(std::format("{} {}, {}", name.data(), fst, snd));
 	} else {
 		const char *r = reg_table[wide][reg];
 		char eff_addr_calc[16] = { '\0' };
@@ -95,9 +106,9 @@ void handle_regmem_reg(std::string_view name, const uint8_t *&source, uint8_t op
 		}
 	
 		if (dest) {
-			fprintf(stdout, "%s %s, [%s]\n", name.data(), r, eff_addr_calc);
+			human_asm.push_back(std::format("{} {}, [{}]", name.data(), r, eff_addr_calc));
 		} else {
-			fprintf(stdout, "%s [%s], %s\n", name.data(), eff_addr_calc, r);
+			human_asm.push_back(std::format("{} [{}], {}", name.data(), eff_addr_calc, r));
 		}
 	}
 }
@@ -123,7 +134,7 @@ void handle_imm_regmem(std::string_view name, const uint8_t *&source, uint8_t op
 	
 		int16_t data = get_imm_data(source, wide, sign_extended);
 	
-		fprintf(stdout, "%s %s, %d\n", name.data(), r, data);
+		human_asm.push_back(std::format("{} {}, {}", name.data(), r, data));
 	} else if (mode == MemoryMode::SHORT) {
 		char eff_addr_calc[16] = { '\0' };
 		int8_t disp = *source++;
@@ -136,7 +147,7 @@ void handle_imm_regmem(std::string_view name, const uint8_t *&source, uint8_t op
 			sprintf(eff_addr_calc, "%s", eff_addr_table[regmem]);
 		}
 	
-		fprintf(stdout, "%s [%s], byte %d\n", name.data(), eff_addr_calc, data);
+		human_asm.push_back(std::format("{} [{}], byte {}", name.data(), eff_addr_calc, data));
 	} else if (mode == MemoryMode::WIDE) {
 		char eff_addr_calc[16] = { '\0' };
 		uint8_t disp_l = *source++;
@@ -151,7 +162,7 @@ void handle_imm_regmem(std::string_view name, const uint8_t *&source, uint8_t op
 			sprintf(eff_addr_calc, "%s", eff_addr_table[regmem]);
 		}
 	
-		fprintf(stdout, "%s [%s], word %d\n", name.data(), eff_addr_calc, data);
+		human_asm.push_back(std::format("{} [{}], word {}", name.data(), eff_addr_calc, data));
 	} else if (mode == MemoryMode::NO_DISPLACEMENT) {
 		char eff_addr_calc[16] = { '\0' };
 	
@@ -167,7 +178,7 @@ void handle_imm_regmem(std::string_view name, const uint8_t *&source, uint8_t op
 					
 		int16_t data = get_imm_data(source, wide, sign_extended);
 	
-		fprintf(stdout, "%s [%s], %s %d\n", name.data(), eff_addr_table[regmem], (wide ? "word" : "byte"), data);
+		human_asm.push_back(std::format("{} [{}], {} {}", name.data(), eff_addr_table[regmem], (wide ? "word" : "byte"), data));
 	}
 }
 
@@ -178,7 +189,7 @@ void handle_imm_reg(std::string_view name, const uint8_t *&source, uint8_t opcod
 	int16_t data = get_imm_data(source, wide);
 
 	const char *r = reg_table[wide][reg];
-	fprintf(stdout, "%s %s, %d\n", name.data(), r, data);
+	human_asm.push_back(std::format("{} {}, {}", name.data(), r, data));
 }
 
 void handle_mem_acc(std::string_view name, const uint8_t *&source, uint8_t opcode) {
@@ -186,7 +197,7 @@ void handle_mem_acc(std::string_view name, const uint8_t *&source, uint8_t opcod
 	uint16_t addr = *source++;
 	addr = addr | (*source++ << 8);
 	
-	fprintf(stdout, "%s %s, [%d]\n", name.data(), wide ? "ax" : "al", addr);
+	human_asm.push_back(std::format("{} {}, [{}]", name.data(), wide ? "ax" : "al", addr));
 }
 
 void handle_acc_mem(std::string_view name, const uint8_t *&source, uint8_t opcode) {
@@ -194,27 +205,35 @@ void handle_acc_mem(std::string_view name, const uint8_t *&source, uint8_t opcod
 	uint16_t addr = *source++;
 	addr = addr | (*source++ << 8);
 	
-	fprintf(stdout, "%s [%d], %s\n", name.data(), addr, wide ? "ax" : "al");
+	human_asm.push_back(std::format("{} [{}], {}", name.data(), addr, wide ? "ax" : "al"));
 }
 
 void handle_imm_acc(std::string_view name, const uint8_t *&source, uint8_t opcode) {
 	const bool wide = (opcode & W_MASK);
 	int16_t data = get_imm_data(source, wide);
 
-	fprintf(stdout, "%s %s, %d\n", name.data(), wide ? "ax" : "al", data);
+	human_asm.push_back(std::format("{} {}, {}", name.data(), wide ? "ax" : "al", data));
 }
 
 void handle_jmp(std::string_view name, const uint8_t *&source) {
 	int8_t offset = *source++;
-	fprintf(stdout, "%s %d\n", name.data(), offset);
+
+	// Each jmp instruction is 2 bytes and offset is given in bytes
+	// so if we want to count offset by instructions we divide by 2
+	int instr_offset = (offset >> 1);
+	std::size_t line = human_asm.size() + instr_offset;
+	if (!labels.contains(line)) {
+		labels.insert({ line, labels.size() });
+	}
+	human_asm.push_back(HumanAsm{ std::format("{}", name.data(), offset), line });
 }
 
 void decode(const uint8_t *source, std::size_t source_size) {
 	// Incdicate asm is  16 bits arch
-	fprintf(stdout, "bits 16\n\n");
+	human_asm.push_back(std::format("bits 16"));
 
-	SOURCE = source;
-	while (source < SOURCE + source_size) {
+	auto og_src = source;
+	while (source < og_src + source_size) {
 		const uint8_t opcode = *source++;
 		uint8_t snd_byte = 0;
 
@@ -270,6 +289,19 @@ void decode(const uint8_t *source, std::size_t source_size) {
 			fprintf(stdout, "instruction not supported!");
 			exit(1);
 			break; // just in case
+		}
+	}
+
+	for (std::size_t i = 0; i < human_asm.size(); ++i) {
+		auto &instr = human_asm[i];
+		int label_idx = -1;
+		bool is_jmp = instr.jmp_line.has_value();
+		if (is_jmp) {
+			label_idx = labels[instr.jmp_line.value()];
+		}
+		fprintf(stdout, "%s%s\n", instr.instr.c_str(), is_jmp ? (" label" + std::to_string(label_idx)).c_str() : "");
+		if (auto it = labels.find(i); it != labels.end()) {
+			fprintf(stdout, "label%s:\n", std::to_string(it->second).c_str());
 		}
 	}
 }
