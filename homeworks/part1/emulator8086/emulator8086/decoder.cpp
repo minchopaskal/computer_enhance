@@ -24,10 +24,17 @@ std::vector<HumanAsm> human_asm;
 std::unordered_map<std::size_t, int> labels;
 
 enum MemoryMode {
-	NO_DISPLACEMENT,
-	SHORT,
-	WIDE,
-	REGISTER,
+	NO_DISPLACEMENT = 0b00,
+	SHORT = 0b01,
+	WIDE = 0b10, 
+	REGISTER = 0b11,
+};
+
+enum SegRegCode {
+	ES = 0b00,
+	CS = 0b01,
+	SS = 0b10,
+	DS = 0b11,
 };
 
 const char *reg_table[2][8] = {
@@ -44,6 +51,10 @@ const char *eff_addr_table[8] = {
 	"di",
 	"bp",
 	"bx",
+};
+
+const char *segment_reg[4] = {
+	"es", "cs", "ss", "ds"
 };
 
 //bool check_opcode(uint8_t instr, Instruction opcode) {
@@ -142,7 +153,7 @@ void handle_imm_regmem(std::string_view name, const uint8_t *&source, uint8_t op
 		int16_t data = get_imm_data(source, wide, sign_extended);
 	
 		if (disp) {
-			sprintf(eff_addr_calc, "%s %s %d", eff_addr_calc, disp > 0 ? "+" : "-", bitwise_abs(disp));
+			sprintf(eff_addr_calc, "%s %s %d", eff_addr_table[regmem], disp > 0 ? "+" : "-", bitwise_abs(disp));
 		} else {
 			sprintf(eff_addr_calc, "%s", eff_addr_table[regmem]);
 		}
@@ -223,7 +234,7 @@ void handle_jmp(std::string_view name, const uint8_t *&source) {
 	int instr_offset = (offset >> 1);
 	std::size_t line = human_asm.size() + instr_offset;
 	if (!labels.contains(line)) {
-		labels.insert({ line, labels.size() });
+		labels.insert({ line, static_cast<int>(labels.size()) });
 	}
 	human_asm.push_back(HumanAsm{ std::format("{}", name.data(), offset), line });
 }
@@ -235,11 +246,12 @@ void decode(const uint8_t *source, std::size_t source_size) {
 	auto og_src = source;
 	while (source < og_src + source_size) {
 		const uint8_t opcode = *source++;
-		uint8_t snd_byte = 0;
 
 		Instruction instr = get_instruction(opcode);
-		if (instr.type > InstructionType::Special) {
-			snd_byte = *source++;
+		bool special = false;
+		if (instr.type == InstructionType::Special) {
+			special = true;
+			auto snd_byte = *source;
 			instr = get_special_instruction(instr, snd_byte);
 		}
 
@@ -251,7 +263,7 @@ void decode(const uint8_t *source, std::size_t source_size) {
 		}
 		case InstructionType::Imm_RegMem:
 		{
-			handle_imm_regmem(instr.name, source, opcode);
+			handle_imm_regmem(instr.name, source, opcode, special);
 			break;
 		}
 		case InstructionType::Imm_Reg:
@@ -279,15 +291,10 @@ void decode(const uint8_t *source, std::size_t source_size) {
 			handle_jmp(instr.name, source);
 			break;
 		}
-		case InstructionType::Special_Imm_RegMem:
-		{
-			--source;
-			handle_imm_regmem(instr.name, source, opcode, true);
-			break;
-		}
 		default:
+			human_asm.push_back(std::format("{}", instr.name));
 			fprintf(stdout, "instruction not supported!");
-			exit(1);
+			//exit(1);
 			break; // just in case
 		}
 	}

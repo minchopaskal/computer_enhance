@@ -73,5 +73,8 @@
     <None Include="..\..\..\..\perfaware\part1\listing_0042_completionist_decode.asm">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="scripts\instr_table.inl">
+      <Filter>Header Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

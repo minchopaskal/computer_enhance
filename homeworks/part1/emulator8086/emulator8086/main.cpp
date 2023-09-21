@@ -26,7 +26,6 @@ int main(int argc, char **argv) {
 			return 1;
 		}
 
-		emu8086::register_instructions();
 		emu8086::decode(source.get(), filesize);
 	}
 

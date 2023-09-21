@@ -21,6 +21,20 @@ constexpr uint8_t MOD_MASK = 0xC0;
 constexpr uint8_t SB_REG_MASK = 0x38;
 constexpr uint8_t REGMEM_MASK = 0x07;
 
+enum class InstructionOpcode {
+	Unknown,
+
+	mov, push, pop, xchg, in, out, xlat, lea,
+	lds, les, lahf, sahf, pushf, popf, add, inc,
+	aaa, daa, sub, sbb, dec, cmp, aas, das,
+	aad, cbw, and_, test, or_, xor_, repne, rep,
+	movs, cmps, scas, lods, stds, call, jmp, ret,
+	je, jl, jle, jb, jbe, jp, jo, js,
+	jne, jnl, jnle, jnbe, jnb, jnp, jno, jns,
+	loop, loopz, loopnz, jcxz, int_, int3, into, iret,
+	clc, cmc, stc, cld, std, cli, sti, hlt,
+	wait, esc, lock, segment, cwd, aam, adc,
+};
 
 enum class InstructionType : int {
 	Unknown = 0,
@@ -34,30 +48,39 @@ enum class InstructionType : int {
 	Reg_Acc,
 	RegMem_SR,
 	SR_RegMem,
+	SPImm_Seg,
+	Seg,
+	SPImm_InterSeg,
+	InterSeg,
+	Imm,
 	RegMem,
 	Reg,
 	SR,
 	FixedPort,
 	VariablePort,
 	Jmp,
-
+	DirSeg,
+	IndirSeg,
+	DirInterSeg,
+	IndirInterSeg,
+	DirSegShort,
+	Esc,
+	SegmentPrefix,
 	SingleByte,
+	SkipSecond,
+	RegMem_1,
+	RegMem_CL,
 
 	Special,
-	Special_Imm_RegMem,
-	Special_RegMem_1,
-	Special_RegMem_CL,
-	Special_RegMem,
-	Special_Mem,
 };
 
 struct Instruction {
 	std::string name;
 	InstructionType type;
+	InstructionOpcode opcode;
 	int special_instr_idx;
 };
 
-void register_instructions();
 Instruction get_instruction(uint8_t opcode);
 Instruction get_special_instruction(const Instruction& ins, uint8_t snd_byte);
 
