@@ -1,21 +1,21 @@
 special
-add Imm_RegMem
+add Imm_RegMem_SE
 or Imm_RegMem
-adc Imm_RegMem
-sbb Imm_RegMem
+adc Imm_RegMem_SE
+sbb Imm_RegMem_SE
 and Imm_RegMem
-sub Imm_RegMem
+sub Imm_RegMem_SE
 xor Imm_RegMem
-cmp Imm_RegMem
+cmp Imm_RegMem_SE
 
-add Imm_RegMem
-NA Unknown
-adc Imm_RegMem
-sbb Imm_RegMem
-NA Unknown
-sub Imm_RegMem
-NA Unknown
-cmp Imm_RegMem
+add Imm_RegMem_SE
+- Unknown
+adc Imm_RegMem_SE
+sbb Imm_RegMem_SE
+- Unknown
+sub Imm_RegMem_SE
+- Unknown
+cmp Imm_RegMem_SE
 
 rol RegMem_1
 ror RegMem_1
@@ -23,7 +23,7 @@ rcl RegMem_1
 rcr RegMem_1
 sal RegMem_1
 shr RegMem_1
-NA Unknown
+- Unknown
 sar RegMem_1
 
 rol RegMem_CL
@@ -32,11 +32,11 @@ rcl RegMem_CL
 rcr RegMem_CL
 sal RegMem_CL
 shr RegMem_CL
-NA Unknown
+- Unknown
 sar RegMem_CL
 
 test Imm_RegMem
-NA Unknown
+- Unknown
 not RegMem
 neg RegMem
 mul RegMem
@@ -44,23 +44,23 @@ imul RegMem
 div RegMem
 idiv RegMem
 
-inc Imm_RegMem
-dec Imm_RegMem
-NA Unknown
-NA Unknown
-NA Unknown
-NA Unknown
-NA Unknown
-NA Unknown
+inc RegMem
+dec RegMem
+- Unknown
+- Unknown
+- Unknown
+- Unknown
+- Unknown
+- Unknown
 
-inc Imm_RegMem
-dec Imm_RegMem
-call IndirSeg
-call IndirInterSeg
-jmp Imm_RegMem
-jmp Imm_RegMem
-push Imm_RegMem
-NA Unknown
+inc RegMem
+dec RegMem
+call RegMem
+call RegMem
+jmp RegMem
+jmp RegMem
+push RegMem
+- Unknown
 
 normal
 - 1000000 Special 0
@@ -75,8 +75,8 @@ mov 1100011 Imm_RegMem
 mov 1011 Imm_Reg
 mov 1010000 Mem_Acc
 mov 1010001 Acc_Mem
-mov 10001110 RegMem_SR
 mov 10001100 SR_RegMem
+mov 10001110 SR_RegMem
 push 01010 Reg
 push 000--110 SR
 pop 10001111 RegMem
@@ -89,9 +89,9 @@ in 1110110 VariablePort
 out 1110011 FixedPort
 out 1110111 VariablePort
 xlat 11010111
-lea 10001101 RegMem
-lds 11000101 RegMem
-les 11000100 RegMem
+lea 10001101 Mem_Reg
+lds 11000101 Mem_Reg
+les 11000100 Mem_Reg
 lahf 10011111 SingleByte
 sahf 10011110 SingleByte
 pushf 10011100 SingleByte
@@ -130,16 +130,16 @@ movs 1010010
 cmps 1010011
 scas 1010111
 lods 1010110
-stds 1010101
-call 11101000 DirSeg
-call 10011010 DirInterSeg
-jmp 11101001 DirSeg
+stos 1010101
+call 11101000 Imm16
+call 10011010 Imm16
+jmp 11101001 Imm16
 jmp 11101011 Jmp
-jmp 11101010 DirInterSeg
-ret 11000011 Seg
-ret 11000010 SPImm_Seg
-ret 11001011 InterSeg
-ret 11001010 SPImm_InterSeg
+jmp 11101010 Imm16
+ret 11000011
+ret 11000010 Imm16
+ret 11001011
+ret 11001010 Imm16
 je 01110100 Jmp
 jl 01111100 Jmp
 jle 01111110 Jmp
@@ -160,7 +160,7 @@ loop 11100010 Jmp
 loopz 11100001 Jmp
 loopnz 11100000 Jmp
 jcxz 11100011 Jmp
-int 11001101 Imm
+int 11001101 Imm8
 int3 11001100
 into 11001110
 iret 11001111

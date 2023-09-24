@@ -1,5 +1,8 @@
 import sys
 
+instr_names = set()
+instr_types = set()
+
 special = []
 instrs = []
 filename = sys.argv[1]
@@ -32,6 +35,8 @@ for line in instrs:
         instr_type = tokens[2]
     if len(tokens) > 3:
         special_idx = tokens[3]
+
+    instr_types.add(instr_type)
     
     shift = 8 - len(pattern)
     values = []
@@ -40,7 +45,7 @@ for line in instrs:
         values.append(value)
     except ValueError:
         sr_codes = ["00", "10", "11", "01"]
-        if pattern == "000--111":
+        if pattern == "000--111": # the pop doesn't support "01"(cs) segment register
             sr_codes.pop()
         for substr in sr_codes:
             values.append(int(pattern.replace("--", substr), 2))
@@ -58,7 +63,14 @@ with open("instr_table.inl", 'w') as f:
     cnt = 0
     for line in special:
         tokens = line.split(' ')
-        f.write('       {{ \"{}\", InstructionType::{} }},\n'.format(tokens[0], tokens[1]))
+        opcode = tokens[0]
+        if opcode == "-":
+            opcode = "Unknown"
+        if opcode in ["and", "or", "xor", "int", "not"]:
+            opcode = opcode + "_"
+        instr_names.add(opcode)
+        instr_types.add(tokens[1])
+        f.write('       {{ \"{}\", InstructionType::{}, InstructionOpcode::{} }},\n'.format(tokens[0], tokens[1], opcode))
         idx = idx + 1
         if idx == 8:
             idx = 0
@@ -79,14 +91,29 @@ with open("instr_table.inl", 'w') as f:
         opcode = instr[0]
         if instr[0] == "-":
             opcode = "Unknown"
-        if opcode == "and" or opcode == "or" or opcode == "xor" or opcode == "int":
+        if opcode in ["and", "or", "xor", "int", "not"]:
             opcode = opcode + "_"
+        instr_names.add(opcode)
         f.write('   {{ \"{}\", InstructionType::{}, InstructionOpcode::{}, {} }},\n'.format(instr[0], instr[1], opcode, instr[2]))
     f.write('};\n')
 
+with open("instr_opcodes.h", 'w') as f:
+    f.write('#pragma once\n\n')
+    f.write('namespace emu8086 {\n')
+    f.write('enum class InstructionOpcode {\n')
+    f.write('\tUnknown = 0,\n')
 
-    
+    instr_names.remove("Unknown")
+    instr_names = sorted(instr_names)
+    for name in instr_names:
+        f.write('\t{},\n'.format(name))
+    f.write('};\n')
 
-
-
-
+    f.write('enum class InstructionType {\n')
+    f.write('\tUnknown = 0,\n')
+    instr_types.remove('Unknown')
+    instr_types = sorted(instr_types)
+    for t in instr_types:
+        f.write('\t{},\n'.format(t))
+    f.write('};\n')
+    f.write('\n } // namespace emu8086\n')

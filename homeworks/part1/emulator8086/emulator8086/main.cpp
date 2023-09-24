@@ -27,6 +27,7 @@ int main(int argc, char **argv) {
 		}
 
 		emu8086::decode(source.get(), filesize);
+		emu8086::print_asm();
 	}
 
 	return 0;

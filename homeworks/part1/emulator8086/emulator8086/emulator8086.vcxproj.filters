@@ -24,6 +24,9 @@
     <ClInclude Include="instructions.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="scripts\instr_opcodes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="decoder.cpp">
@@ -76,5 +79,13 @@
     <None Include="scripts\instr_table.inl">
       <Filter>Header Files</Filter>
     </None>
+    <None Include="scripts\generate_instruction_table.py">
+      <Filter>Resource Files</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="scripts\instructions.txt">
+      <Filter>Resource Files</Filter>
+    </Text>
   </ItemGroup>
 </Project>

@@ -134,6 +134,7 @@
     <ClInclude Include="decoder.h" />
     <ClInclude Include="emu8086.h" />
     <ClInclude Include="instructions.h" />
+    <ClInclude Include="scripts\instr_opcodes.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="decoder.cpp" />
@@ -153,7 +154,11 @@
     <None Include="..\..\..\..\perfaware\part1\listing_0041_add_sub_cmp_jnz.asm" />
     <None Include="..\..\..\..\perfaware\part1\listing_0042_completionist_decode" />
     <None Include="..\..\..\..\perfaware\part1\listing_0042_completionist_decode.asm" />
+    <None Include="scripts\generate_instruction_table.py" />
     <None Include="scripts\instr_table.inl" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="scripts\instructions.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
