@@ -114,6 +114,13 @@ void handle_imm_regmem(const uint8_t *&source, Instruction &instr, bool sign_ext
 	instr.operands[1].imm_value = get_imm_data(source, res.wide, res.sign_extended);
 }
 
+void handle_imm(const uint8_t *&source, Instruction &instr, bool wide) {
+	++source;
+
+	instr.operands[0].type = OperandType::Immediate;
+	instr.operands[0].imm_value = get_imm_data(source, wide);
+}
+
 void handle_imm_reg(const uint8_t *&source, Instruction &instr) {
 	
 	const uint8_t opcode = *source++;
@@ -201,6 +208,8 @@ void handle_regmem_CL(const uint8_t *&source, Instruction &instr) {
 	std::ignore = handle_regmemlike(source, instr);
 	instr.operands[1].type = OperandType::Register;
 	instr.operands[1].reg = Register::CL;
+
+	instr.flags.dest = false;
 }
 
 void handle_mem_reg(const uint8_t *&source, Instruction &instr) {
@@ -286,10 +295,24 @@ void handle_var_port(const uint8_t *&source, Instruction &instr) {
 	instr.operands[1].reg = Register::DX;
 }
 
+void handle_far_proc(const uint8_t *&source, Instruction &instr) {
+	++source;
+	auto ip_inc = get_imm_data(source, true);
+	auto cs = get_imm_data(source, true);
+
+	instr.operands[0].type = OperandType::FarProc;
+	instr.operands[0].far_proc_ip = ip_inc;
+	instr.operands[0].far_proc_cs = cs;
+}
+
 void print_instr(Instruction &instr, int idx);
 
 void decode(const uint8_t *source, std::size_t source_size) {
 	auto og_src = source;
+
+	uint8_t sr_prefix = 0xff;
+	bool locked = false;
+	bool repeated = false;
 	while (source < og_src + source_size) {
 		const uint8_t opcode = *source;
 
@@ -305,8 +328,12 @@ void decode(const uint8_t *source, std::size_t source_size) {
 		case InstructionType::Esc:
 			handle_esc(source, instr);
 			break;
+		case InstructionType::Imm8:
+			handle_imm(source, instr, false);
+			break;
+		case InstructionType::NearProc:
 		case InstructionType::Imm16:
-			//handle_imm(source, instr, true);
+			handle_imm(source, instr, true);
 			break;
 		case InstructionType::FixedPort:
 			handle_fixed_port(source, instr);
@@ -320,14 +347,18 @@ void decode(const uint8_t *source, std::size_t source_size) {
 		case InstructionType::RegMem:
 			handle_regmem(source, instr);
 			break;
+		case InstructionType::RegMem_Far:
+			handle_regmem(source, instr);
+			instr.flags.far = true;
+			break;
 		case InstructionType::Mem_Reg:
 			handle_mem_reg(source, instr);
 			break;
 		case InstructionType::RegMem_1:
-			handle_regmem(source, instr);
+			handle_regmem_1(source, instr);
 			break;
 		case InstructionType::RegMem_CL:
-			handle_regmem(source, instr);
+			handle_regmem_CL(source, instr);
 			break;
 		case InstructionType::Reg_Acc:
 			handle_reg_acc(source, instr);
@@ -340,6 +371,19 @@ void decode(const uint8_t *source, std::size_t source_size) {
 			break;
 		case InstructionType::SingleByte:
 			++source;
+			if (instr.opcode == InstructionOpcode::lock) {
+				locked = true;
+				continue;
+			}
+			if (instr.opcode == InstructionOpcode::rep) {
+				repeated = true;
+				continue;
+			}
+			break;
+		case InstructionType::StringManip:
+			++source;
+			instr.flags.wide = (opcode & W_MASK);
+			instr.flags.string_op = true;
 			break;
 		case InstructionType::SkipSecond:
 			source += 2;
@@ -368,10 +412,42 @@ void decode(const uint8_t *source, std::size_t source_size) {
 		case InstructionType::Jmp:
 			handle_jmp(source, instr);
 			break;
+		case InstructionType::FarProc:
+			handle_far_proc(source, instr);
+			break;
+		case InstructionType::SegmentPrefix:
+			++source;
+			sr_prefix = (opcode & SR_MASK) >> 3;
+			continue;
+			break;
 		default:
 			fprintf(stdout, "instruction not supported! Type: %d Idx: %llu\n", static_cast<int>(instr.type), decoded.size());
 			exit(1);
 			break; // just in case
+		}
+
+		if (instr.operands[1].type != OperandType::None && instr.flags.dest) {
+			std::swap(instr.operands[0], instr.operands[1]);
+			instr.flags.dest = false;
+		}
+
+		if (sr_prefix < 4) {
+			for (int i = 0; i < 2; ++i) {
+				if (instr.operands[i].type == OperandType::EffectiveAddress || instr.operands[i].type == OperandType::DirectAccess) {
+					instr.operands[i].seg_prefix = sr_prefix;
+					sr_prefix = 0xff;
+				}
+			}
+		}
+
+		if (locked) {
+			instr.flags.locked = true;
+			locked = false;
+		}
+
+		if (repeated) {
+			instr.flags.repeated = true;
+			repeated = false;
 		}
 
 		decoded.push_back(instr);
@@ -383,7 +459,7 @@ std::vector<Instruction> &get_decoded_instructions() {
 	return decoded;
 }
 
-void print_operand(Operand &op, bool wide, std::size_t idx, bool other_imm, bool snd = false) {
+void print_operand(Operand &op, bool wide, std::size_t idx, bool print_width_specifier, bool snd = false) {
 	if (op.type == OperandType::None) {
 		return;
 	}
@@ -399,7 +475,7 @@ void print_operand(Operand &op, bool wide, std::size_t idx, bool other_imm, bool
 		fprintf(stdout, "%d", op.imm_value);
 		break;
 	case OperandType::EffectiveAddress:
-		if (other_imm) {
+		if (print_width_specifier) {
 			fprintf(stdout, "%s ", specifier);
 		}
 		if (op.seg_prefix != 0xff) {
@@ -415,7 +491,7 @@ void print_operand(Operand &op, bool wide, std::size_t idx, bool other_imm, bool
 		fprintf(stdout, "]");
 		break;
 	case OperandType::DirectAccess:
-		if (other_imm) {
+		if (print_width_specifier) {
 			fprintf(stdout, "%s ", specifier);
 		}
 		if (op.seg_prefix != 0xff) {
@@ -444,22 +520,29 @@ void print_operand(Operand &op, bool wide, std::size_t idx, bool other_imm, bool
 
 		break;
 	}
+	case OperandType::FarProc:
+		fprintf(stdout, "%d:%d", op.far_proc_cs, op.far_proc_ip);
+		break;
 	case OperandType::None:
 		break;
 	}
 }
 
 void print_instr(Instruction &instr, int idx) {
-	if (instr.operands[1].type != OperandType::None && instr.flags.dest) {
-		std::swap(instr.operands[0], instr.operands[1]);
-	}
-
 	auto &op0 = instr.operands[0];
 	auto &op1 = instr.operands[1];
 
-	fprintf(stdout, "%s", instr.name.c_str());
-	print_operand(op0, instr.flags.wide, idx, op1.type == OperandType::Immediate || op1.type == OperandType::None);
-	print_operand(op1, instr.flags.wide, idx, op0.type == OperandType::Immediate, true);
+	bool width_specifier = (instr.opcode != InstructionOpcode::call && instr.opcode != InstructionOpcode::jmp);
+
+	fprintf(stdout, "%s%s%s%s%s",
+		(instr.flags.locked ? "lock " : ""),
+		(instr.flags.repeated ? "rep " : ""),
+		instr.name.c_str(),
+		(instr.flags.string_op ? (instr.flags.wide ? "w" : "b") : ""),
+		(instr.flags.far && instr.operands[0].type != OperandType::FarProc ? " far " : "")
+	);
+	print_operand(op0, instr.flags.wide, idx, (op1.type == OperandType::Immediate || op1.type == OperandType::None) && width_specifier);
+	print_operand(op1, instr.flags.wide, idx, op0.type == OperandType::Immediate && width_specifier, true);
 
 	// print label if necessary
 	if (auto it = labels.find(idx); it != labels.end()) {

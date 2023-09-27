@@ -76,11 +76,15 @@ enum class OperandType {
 	SegmentRegister,
 	EffectiveAddress,
 	DirectAccess,
+	FarProc,
 };
 
 struct Operand {
 	OperandType type;
 	union {
+		struct {
+			int16_t far_proc_ip;
+		};
 		int8_t jmp_offset;
 		int16_t imm_value;
 		Register reg;
@@ -88,6 +92,9 @@ struct Operand {
 		SegmentRegister seg_reg;
 	};
 	union {
+		struct {
+			int16_t far_proc_cs;
+		};
 		int16_t displacement;
 		uint16_t direct_access;
 	};
@@ -103,8 +110,12 @@ struct Instruction {
 	// Populated by decoder
 	Operand operands[2];
 	struct {
-		bool wide;
-		bool dest;
+		bool wide = false;
+		bool dest = false;
+		bool locked = false;
+		bool repeated = false;
+		bool string_op = false;
+		bool far = false;
 	} flags;
 };
 

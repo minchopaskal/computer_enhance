@@ -56,9 +56,9 @@ dec RegMem
 inc RegMem
 dec RegMem
 call RegMem
-call RegMem
+call RegMem_Far
 jmp RegMem
-jmp RegMem
+jmp RegMem_Far
 push RegMem
 - Unknown
 
@@ -112,7 +112,7 @@ cmp 001110 RegMem_Reg
 cmp 0011110 Imm_Acc
 aas 00111111
 das 00101111
-aam 11010100
+aam 11010100 SkipSecond
 aad 11010101 SkipSecond
 cbw 10011000
 cwd 10011001
@@ -126,20 +126,20 @@ xor 001100 RegMem_Reg
 xor 0011010 Imm_Acc
 repne 11110010
 rep 11110011
-movs 1010010 
-cmps 1010011
-scas 1010111
-lods 1010110
-stos 1010101
-call 11101000 Imm16
-call 10011010 Imm16
-jmp 11101001 Imm16
+movs 1010010 StringManip
+cmps 1010011 StringManip
+scas 1010111 StringManip
+lods 1010110 StringManip
+stos 1010101 StringManip
+call 11101000 NearProc
+call 10011010 FarProc
+jmp 11101001 NearProc
 jmp 11101011 Jmp
-jmp 11101010 Imm16
+jmp 11101010 FarProc
 ret 11000011
 ret 11000010 Imm16
-ret 11001011
-ret 11001010 Imm16
+retf 11001011
+retf 11001010 Imm16
 je 01110100 Jmp
 jl 01111100 Jmp
 jle 01111110 Jmp
