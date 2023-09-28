@@ -12,7 +12,6 @@
 
 namespace emu8086 {
 
-// State
 std::vector<Instruction> decoded;
 std::unordered_map<std::size_t, int> labels;
 
@@ -37,12 +36,12 @@ struct RegMemLike {
 	bool sign_extended;
 };
 
-[[nodiscard]] RegMemLike handle_regmemlike(const uint8_t *&source, Instruction &instr) {
+[[nodiscard]] RegMemLike handle_regmemlike(const uint8_t *&source, Instruction &instr, bool force_wide = false) {
 	const uint8_t opcode = *source++;
 	const uint8_t mem = *source++;
 
 	const bool dest = (opcode & D_MASK) != 0;
-	const bool wide = (opcode & W_MASK);
+	const bool wide = (opcode & W_MASK) || force_wide;
 	const bool sign_extended = (opcode & S_MASK) != 0;
 
 	const uint8_t mode = (mem & MOD_MASK) >> 6;
@@ -126,13 +125,13 @@ void handle_imm_reg(const uint8_t *&source, Instruction &instr) {
 	const uint8_t opcode = *source++;
 	const uint8_t reg = (opcode & FB_REG_MASK);
 
-	const bool wide = (opcode & IMM_W_MASK);
+	instr.flags.wide = (opcode & IMM_W_MASK);
 
 	instr.operands[0].type = OperandType::Register;
-	instr.operands[0].reg = get_register(reg, wide);
+	instr.operands[0].reg = get_register(reg, instr.flags.wide);
 
 	instr.operands[1].type = OperandType::Immediate;
-	instr.operands[1].imm_value = get_imm_data(source, wide);
+	instr.operands[1].imm_value = get_imm_data(source, instr.flags.wide);
 }
 
 void handle_mem_acc(const uint8_t *&source, Instruction &instr) {
@@ -207,7 +206,7 @@ void handle_regmem_1(const uint8_t *&source, Instruction &instr) {
 void handle_regmem_CL(const uint8_t *&source, Instruction &instr) {
 	std::ignore = handle_regmemlike(source, instr);
 	instr.operands[1].type = OperandType::Register;
-	instr.operands[1].reg = Register::CL;
+	instr.operands[1].reg = RegisterName::CL;
 
 	instr.flags.dest = false;
 }
@@ -251,8 +250,8 @@ void handle_seg_reg(const uint8_t *&source, Instruction &instr) {
 }
 
 void handle_sr_regmem(const uint8_t *&source, Instruction &instr) {
-	auto res = handle_regmemlike(source, instr);
-	
+	auto res = handle_regmemlike(source, instr, true);
+
 	instr.operands[1].type = OperandType::SegmentRegister;
 	instr.operands[1].seg_reg = get_seg_reg(res.seg_reg);
 }
@@ -292,7 +291,7 @@ void handle_var_port(const uint8_t *&source, Instruction &instr) {
 	instr.operands[0].type = OperandType::Accumulator;
 
 	instr.operands[1].type = OperandType::Register;
-	instr.operands[1].reg = Register::DX;
+	instr.operands[1].reg = RegisterName::DX;
 }
 
 void handle_far_proc(const uint8_t *&source, Instruction &instr) {
@@ -451,7 +450,7 @@ void decode(const uint8_t *source, std::size_t source_size) {
 		}
 
 		decoded.push_back(instr);
-		print_instr(instr, static_cast<int>(decoded.size() - 1));
+		//print_instr(instr, decoded.size() - 1);
 	}
 }
 
@@ -479,9 +478,9 @@ void print_operand(Operand &op, bool wide, std::size_t idx, bool print_width_spe
 			fprintf(stdout, "%s ", specifier);
 		}
 		if (op.seg_prefix != 0xff) {
-			fprintf(stdout, "%s:", segment_reg[op.seg_prefix]);
+			fprintf(stdout, "%s:", sr_to_str[op.seg_prefix]);
 		}
-		fprintf(stdout, "[%s", eff_addr_table[static_cast<int>(op.eff_addr)]);
+		fprintf(stdout, "[%s", eff_addr_to_str[static_cast<int>(op.eff_addr)]);
 		if (op.displacement > 0) {
 			fprintf(stdout, " + %d", op.displacement);
 		}
@@ -495,15 +494,15 @@ void print_operand(Operand &op, bool wide, std::size_t idx, bool print_width_spe
 			fprintf(stdout, "%s ", specifier);
 		}
 		if (op.seg_prefix != 0xff) {
-			fprintf(stdout, "%s:", segment_reg[op.seg_prefix]);
+			fprintf(stdout, "%s:", sr_to_str[op.seg_prefix]);
 		}
 		fprintf(stdout, "[%d]", op.direct_access);
 		break;
 	case OperandType::Register:
-		fprintf(stdout, "%s", reg_table[static_cast<int>(op.reg)]);
+		fprintf(stdout, "%s", reg_to_str[static_cast<int>(op.reg)]);
 		break;
 	case OperandType::SegmentRegister:
-		fprintf(stdout, "%s", segment_reg[static_cast<int>(op.seg_reg)]);
+		fprintf(stdout, "%s", sr_to_str[static_cast<int>(op.seg_reg)]);
 		break;
 	case OperandType::Accumulator:
 		fprintf(stdout, "%s", wide ? "ax" : "al");

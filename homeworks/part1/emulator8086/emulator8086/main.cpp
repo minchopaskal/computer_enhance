@@ -3,17 +3,33 @@
 
 #include "decoder.h"
 #include "instructions.h"
+#include "emulator.h"
 
 #include <filesystem>
 #include <iostream>
 
 int main(int argc, char **argv) {
-	if (argc != 2) {
-		fprintf(stdout, "Usage: %s <filename>\n", argv[0]);
+	if (argc < 2) {
+		fprintf(stdout, "Usage: %s <filename> [<param>,]\n", argv[0]);
+		fprintf(stdout, "\tSupported parameters:\n");
+		fprintf(stdout, "\t\t-exec Execute the decoded instructions\n");
+		fprintf(stdout, "\t\t-print Print asm of decoded instructions\n");
 		return 1;
 	}
 
 	const char *filename = argv[1];
+
+	bool exec = false;
+	bool print = false;
+	for (int i = 2; i < argc; ++i) {
+		if (strncmp(argv[i], "-exec", 5) == 0) {
+			exec = true;
+		}
+		if (strncmp(argv[i], "-print", 5) == 0) {
+			print = true;
+		}
+	}
+
 	auto filesize = std::filesystem::file_size(filename);
 
 	FILE *f = fopen(filename, "rb");
@@ -27,7 +43,16 @@ int main(int argc, char **argv) {
 		}
 
 		emu8086::decode(source.get(), filesize);
-		emu8086::print_asm();
+
+		if (print) {
+			emu8086::print_asm();
+		}
+
+		if (exec) {
+			auto instructions = emu8086::get_decoded_instructions();
+			emu8086::emulate(instructions);
+			emu8086::print_registers();
+		}
 	}
 
 	return 0;

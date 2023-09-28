@@ -27,6 +27,12 @@
     <ClInclude Include="scripts\instr_opcodes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="memory.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="emulator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="decoder.cpp">
@@ -38,53 +44,50 @@
     <ClCompile Include="instructions.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="memory.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="emulator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\..\..\perfaware\part1\listing_0038_many_register_mov">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="..\..\..\..\perfaware\part1\listing_0037_single_register_mov">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="..\..\..\..\perfaware\part1\listing_0037_single_register_mov.asm">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="..\..\..\..\perfaware\part1\listing_0038_many_register_mov.asm">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="..\..\..\..\perfaware\part1\listing_0039_more_movs">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="..\..\..\..\perfaware\part1\listing_0039_more_movs.asm">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="..\..\..\..\perfaware\part1\listing_0040_challenge_movs">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="..\..\..\..\perfaware\part1\listing_0040_challenge_movs.asm">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="..\..\..\..\perfaware\part1\listing_0041_add_sub_cmp_jnz">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="..\..\..\..\perfaware\part1\listing_0041_add_sub_cmp_jnz.asm">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="..\..\..\..\perfaware\part1\listing_0042_completionist_decode">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="..\..\..\..\perfaware\part1\listing_0042_completionist_decode.asm">
-      <Filter>Resource Files</Filter>
-    </None>
     <None Include="scripts\instr_table.inl">
       <Filter>Header Files</Filter>
     </None>
     <None Include="scripts\generate_instruction_table.py">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="..\..\..\..\perfaware\part1\listing_0043_immediate_movs">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\..\..\perfaware\part1\listing_0043_immediate_movs.asm">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\..\..\perfaware\part1\listing_0044_register_movs">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\..\..\perfaware\part1\listing_0044_register_movs.asm">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\..\..\perfaware\part1\listing_0045_challenge_register_movs">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\..\..\perfaware\part1\listing_0045_challenge_register_movs.asm">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Text Include="scripts\instructions.txt">
+      <Filter>Resource Files</Filter>
+    </Text>
+    <Text Include="..\..\..\..\perfaware\part1\listing_0043_immediate_movs.txt">
+      <Filter>Resource Files</Filter>
+    </Text>
+    <Text Include="..\..\..\..\perfaware\part1\listing_0044_register_movs.txt">
+      <Filter>Resource Files</Filter>
+    </Text>
+    <Text Include="..\..\..\..\perfaware\part1\listing_0045_challenge_register_movs.txt">
       <Filter>Resource Files</Filter>
     </Text>
   </ItemGroup>
