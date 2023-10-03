@@ -58,22 +58,16 @@
     <None Include="scripts\generate_instruction_table.py">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="..\..\..\..\perfaware\part1\listing_0043_immediate_movs">
+    <None Include="..\..\..\..\perfaware\part1\listing_0046_add_sub_cmp">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="..\..\..\..\perfaware\part1\listing_0043_immediate_movs.asm">
+    <None Include="..\..\..\..\perfaware\part1\listing_0046_add_sub_cmp.asm">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="..\..\..\..\perfaware\part1\listing_0044_register_movs">
+    <None Include="..\..\..\..\perfaware\part1\listing_0047_challenge_flags">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="..\..\..\..\perfaware\part1\listing_0044_register_movs.asm">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="..\..\..\..\perfaware\part1\listing_0045_challenge_register_movs">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="..\..\..\..\perfaware\part1\listing_0045_challenge_register_movs.asm">
+    <None Include="..\..\..\..\perfaware\part1\listing_0047_challenge_flags.asm">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>
@@ -81,13 +75,10 @@
     <Text Include="scripts\instructions.txt">
       <Filter>Resource Files</Filter>
     </Text>
-    <Text Include="..\..\..\..\perfaware\part1\listing_0043_immediate_movs.txt">
+    <Text Include="..\..\..\..\perfaware\part1\listing_0046_add_sub_cmp.txt">
       <Filter>Resource Files</Filter>
     </Text>
-    <Text Include="..\..\..\..\perfaware\part1\listing_0044_register_movs.txt">
-      <Filter>Resource Files</Filter>
-    </Text>
-    <Text Include="..\..\..\..\perfaware\part1\listing_0045_challenge_register_movs.txt">
+    <Text Include="..\..\..\..\perfaware\part1\listing_0047_challenge_flags.txt">
       <Filter>Resource Files</Filter>
     </Text>
   </ItemGroup>

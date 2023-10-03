@@ -304,8 +304,6 @@ void handle_far_proc(const uint8_t *&source, Instruction &instr) {
 	instr.operands[0].far_proc_cs = cs;
 }
 
-void print_instr(Instruction &instr, int idx);
-
 void decode(const uint8_t *source, std::size_t source_size) {
 	auto og_src = source;
 
@@ -420,7 +418,7 @@ void decode(const uint8_t *source, std::size_t source_size) {
 			continue;
 			break;
 		default:
-			fprintf(stdout, "instruction not supported! Type: %d Idx: %llu\n", static_cast<int>(instr.type), decoded.size());
+			fprintf(STREAM_OUT, "instruction not supported! Type: %d Idx: %llu\n", static_cast<int>(instr.type), decoded.size());
 			exit(1);
 			break; // just in case
 		}
@@ -458,12 +456,12 @@ std::vector<Instruction> &get_decoded_instructions() {
 	return decoded;
 }
 
-void print_operand(Operand &op, bool wide, std::size_t idx, bool print_width_specifier, bool snd = false) {
+void print_operand(const Operand &op, bool wide, std::size_t idx, bool print_width_specifier, bool snd = false) {
 	if (op.type == OperandType::None) {
 		return;
 	}
 
-	fprintf(stdout, "%s ", snd ? "," : "");
+	fprintf(STREAM_OUT, "%s ", snd ? "," : "");
 
 	char specifier[5] = { '\0' };
 	int len = sprintf(specifier, "%s", wide ? "word" : "byte");
@@ -471,69 +469,69 @@ void print_operand(Operand &op, bool wide, std::size_t idx, bool print_width_spe
 
 	switch (op.type) {
 	case OperandType::Immediate:
-		fprintf(stdout, "%d", op.imm_value);
+		fprintf(STREAM_OUT, "%d", op.imm_value);
 		break;
 	case OperandType::EffectiveAddress:
 		if (print_width_specifier) {
-			fprintf(stdout, "%s ", specifier);
+			fprintf(STREAM_OUT, "%s ", specifier);
 		}
 		if (op.seg_prefix != 0xff) {
-			fprintf(stdout, "%s:", sr_to_str[op.seg_prefix]);
+			fprintf(STREAM_OUT, "%s:", sr_to_str[op.seg_prefix]);
 		}
-		fprintf(stdout, "[%s", eff_addr_to_str[static_cast<int>(op.eff_addr)]);
+		fprintf(STREAM_OUT, "[%s", eff_addr_to_str[static_cast<int>(op.eff_addr)]);
 		if (op.displacement > 0) {
-			fprintf(stdout, " + %d", op.displacement);
+			fprintf(STREAM_OUT, " + %d", op.displacement);
 		}
 		if (op.displacement < 0) {
-			fprintf(stdout, " - %d", bitwise_abs(op.displacement));
+			fprintf(STREAM_OUT, " - %d", bitwise_abs(op.displacement));
 		}
-		fprintf(stdout, "]");
+		fprintf(STREAM_OUT, "]");
 		break;
 	case OperandType::DirectAccess:
 		if (print_width_specifier) {
-			fprintf(stdout, "%s ", specifier);
+			fprintf(STREAM_OUT, "%s ", specifier);
 		}
 		if (op.seg_prefix != 0xff) {
-			fprintf(stdout, "%s:", sr_to_str[op.seg_prefix]);
+			fprintf(STREAM_OUT, "%s:", sr_to_str[op.seg_prefix]);
 		}
-		fprintf(stdout, "[%d]", op.direct_access);
+		fprintf(STREAM_OUT, "[%d]", op.direct_access);
 		break;
 	case OperandType::Register:
-		fprintf(stdout, "%s", reg_to_str[static_cast<int>(op.reg)]);
+		fprintf(STREAM_OUT, "%s", reg_to_str[static_cast<int>(op.reg)]);
 		break;
 	case OperandType::SegmentRegister:
-		fprintf(stdout, "%s", sr_to_str[static_cast<int>(op.seg_reg)]);
+		fprintf(STREAM_OUT, "%s", sr_to_str[static_cast<int>(op.seg_reg)]);
 		break;
 	case OperandType::Accumulator:
-		fprintf(stdout, "%s", wide ? "ax" : "al");
+		fprintf(STREAM_OUT, "%s", wide ? "ax" : "al");
 		break;
 	case OperandType::Label:
 	{
 		int instr_offset = (op.jmp_offset >> 1);
 		std::size_t line = idx + instr_offset;
 		if (auto it = labels.find(line); it != labels.end()) {
-			fprintf(stdout, "label%d", it->second);
+			fprintf(STREAM_OUT, "label%d", it->second);
 		} else {
-			fprintf(stdout, "LABEL_NOT_FOUND");
+			fprintf(STREAM_OUT, "LABEL_NOT_FOUND");
 		}
 
 		break;
 	}
 	case OperandType::FarProc:
-		fprintf(stdout, "%d:%d", op.far_proc_cs, op.far_proc_ip);
+		fprintf(STREAM_OUT, "%d:%d", op.far_proc_cs, op.far_proc_ip);
 		break;
 	case OperandType::None:
 		break;
 	}
 }
 
-void print_instr(Instruction &instr, int idx) {
+void print_instr(const Instruction &instr, std::size_t idx) {
 	auto &op0 = instr.operands[0];
 	auto &op1 = instr.operands[1];
 
 	bool width_specifier = (instr.opcode != InstructionOpcode::call && instr.opcode != InstructionOpcode::jmp);
 
-	fprintf(stdout, "%s%s%s%s%s",
+	fprintf(STREAM_OUT, "%s%s%s%s%s",
 		(instr.flags.locked ? "lock " : ""),
 		(instr.flags.repeated ? "rep " : ""),
 		instr.name.c_str(),
@@ -545,19 +543,19 @@ void print_instr(Instruction &instr, int idx) {
 
 	// print label if necessary
 	if (auto it = labels.find(idx); it != labels.end()) {
-		fprintf(stdout, "\nlabel%s:", std::to_string(it->second).c_str());
+		fprintf(STREAM_OUT, "\nlabel%s:", std::to_string(it->second).c_str());
 	}
 
-	fprintf(stdout, "\n");
 }
 
 void print_asm() {
-	fprintf(stdout, "bits 16\n");
+	fprintf(STREAM_OUT, "bits 16\n");
 
 	for (std::size_t i = 0; i < decoded.size(); ++i) {
 		auto &instr = decoded[i];
 
-		print_instr(instr, static_cast<int>(i));
+		print_instr(instr, i);
+		fprintf(STREAM_OUT, "\n");
 	}
 }
 

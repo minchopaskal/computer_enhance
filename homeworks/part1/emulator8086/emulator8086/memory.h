@@ -1,6 +1,9 @@
 #pragma once
 
+#include "emu8086.h"
+
 #include <cstdint>
+#include <vector>
 
 namespace emu8086 {
 
@@ -27,6 +30,41 @@ enum class EffectiveAddress {
 	BX,
 };
 
+enum class Flag : uint16_t {
+	EMPTY = 0,
+
+	CF = (1 << 0),
+	PF = (1 << 2),
+	AF = (1 << 4),
+	ZF = (1 << 6),
+	SF = (1 << 7),
+	TF = (1 << 8),
+	IF = (1 << 9),
+	DF = (1 << 10),
+	OF = (1 << 11),
+};
+
+Flag operator|(Flag f1, Flag f2);
+
+static const char *flag_name[16] = {
+	"CF",
+	"UnknownFlag1",
+	"PF",
+	"UnknownFlag3",
+	"AF",
+	"UnknownFlag5",
+	"ZF",
+	"SF",
+	"TF",
+	"IF",
+	"DF",
+	"OF",
+	"UnknownFlag12",
+	"UnknownFlag13",
+	"UnknownFlag14",
+	"UnknownFlag15",
+};
+
 static const char *reg_to_str[16] = {
 	"al", "cl", "dl", "bl", "ah", "ch", "dh", "bh",
 	"ax", "cx", "dx", "bx", "sp", "bp", "si", "di",
@@ -51,8 +89,9 @@ struct Register {
 	union {
 		uint16_t data = 0;
 
+		// little-endian
 		struct {
-			uint8_t low;
+			int8_t low;
 			uint8_t high;
 		};
 	};
@@ -71,6 +110,12 @@ SegmentRegister *get_srs();
 SegmentRegister get_sr(SegmentRegisterName sr);
 void set_sr(SegmentRegisterName sr, uint16_t data);
 
-void print_registers();
+bool flags_set(Flag flag);
+void set_flags(Flag flags);
+std::vector<Flag> get_flags(Flag flag);
+void set_flag(Flag flag, bool set);
+
+void print_flags();
+void print_state();
 
 } // namespace emu8086

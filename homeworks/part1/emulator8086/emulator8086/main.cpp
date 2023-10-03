@@ -10,10 +10,10 @@
 
 int main(int argc, char **argv) {
 	if (argc < 2) {
-		fprintf(stdout, "Usage: %s <filename> [<param>,]\n", argv[0]);
-		fprintf(stdout, "\tSupported parameters:\n");
-		fprintf(stdout, "\t\t-exec Execute the decoded instructions\n");
-		fprintf(stdout, "\t\t-print Print asm of decoded instructions\n");
+		fprintf(STREAM_OUT, "Usage: %s <filename> [<param>,]\n", argv[0]);
+		fprintf(STREAM_OUT, "\tSupported parameters:\n");
+		fprintf(STREAM_OUT, "\t\t-exec Execute the decoded instructions\n");
+		fprintf(STREAM_OUT, "\t\t-print Print asm of decoded instructions\n");
 		return 1;
 	}
 
@@ -38,7 +38,7 @@ int main(int argc, char **argv) {
 		auto bytes_read = fread(source.get(), sizeof(uint8_t), filesize, f);
 		
 		if (bytes_read != filesize) {
-			fprintf(stderr, "Failed to read file %s!\n", filename);
+			fprintf(STREAM_ERR, "Failed to read file %s!\n", filename);
 			return 1;
 		}
 
@@ -51,7 +51,8 @@ int main(int argc, char **argv) {
 		if (exec) {
 			auto instructions = emu8086::get_decoded_instructions();
 			emu8086::emulate(instructions);
-			emu8086::print_registers();
+			emu8086::print_state();
+			fprintf(STREAM_OUT, "\n");
 		}
 	}
 

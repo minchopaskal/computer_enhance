@@ -6,6 +6,19 @@ namespace emu8086 {
 
 Register registers[8];
 SegmentRegister seg_regs[4];
+Flag flags;
+
+namespace detail {
+
+Flag from(uint16_t value) {
+	return static_cast<Flag>(value);
+}
+
+uint16_t to(Flag f) {
+	return static_cast<uint16_t>(f);
+}
+
+}
 
 Register *get_registers() {
 	return registers;
@@ -33,16 +46,28 @@ void set_register(RegisterName reg, uint16_t data) {
 	}
 }
 
-void print_registers() {
+void print_flags() {
+	fprintf(STREAM_OUT, "flags:");
+	auto f = detail::to(flags);
+	for (int i = 15; i >= 0; --i) {
+		if (f & (1 << i)) {
+			fprintf(STREAM_OUT, " %s", flag_name[i]);
+		}
+	}
+}
+
+void print_state() {
 	static constexpr int idxs[8] = { 0, 3, 1, 2, 4, 5, 6, 7 };
-	fprintf(stdout, "\n==========================================\n");
+	fprintf(STREAM_OUT, "\n==========================================\n");
 	for (int i = 0; i < 8; ++i) {
-		fprintf(stdout, "%s -> %04x\n", reg_to_str[idxs[i] + 8], registers[idxs[i]].data);
+		fprintf(STREAM_OUT, "%s -> %04x\n", reg_to_str[idxs[i] + 8], registers[idxs[i]].data);
 	}
 
 	for (int i = 0; i < 4; ++i) {
-		fprintf(stdout, "%s -> %04x\n", sr_to_str[i], seg_regs[i]);
+		fprintf(STREAM_OUT, "%s -> %04x\n", sr_to_str[i], seg_regs[i]);
 	}
+
+	print_flags();
 }
 
 SegmentRegister* get_srs() {
@@ -55,6 +80,38 @@ SegmentRegister get_sr(SegmentRegisterName sr) {
 
 void set_sr(SegmentRegisterName sr, uint16_t data) {
 	seg_regs[static_cast<int>(sr)] = data;
+}
+
+Flag operator|(Flag f1, Flag f2) {
+	return detail::from(detail::to(f1) | detail::to(f2));
+}
+
+bool flags_set(Flag flag) {
+	return (detail::to(flag) & detail::to(flags)) != 0;
+}
+
+void set_flags(Flag f) {
+	flags = f;
+}
+
+std::vector<Flag> get_flags(Flag flag) {
+	std::vector<Flag> result;
+	auto fs = detail::to(flag);
+	for (int i = 0; i < 16; ++i) {
+		if (fs & (1 << i)) {
+			result.push_back(detail::from(1 << i));
+		}
+	}
+
+	return result;
+}
+
+void set_flag(Flag flag, bool set) {
+	if (set) {
+		flags = flags | flag;
+	} else {
+		flags = detail::from(detail::to(flags) & ~detail::to(flag));
+	}
 }
 
 } // namespace emu8086
